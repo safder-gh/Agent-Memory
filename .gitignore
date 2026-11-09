@@ -1,0 +1,17 @@
+# .NET
+**/bin/
+**/obj/
+*.user
+
+# Local chat data and credentials
+*.db
+*.db-shm
+*.db-wal
+.env
+.env.*
+!.env.example
+
+# Angular / Node
+**/node_modules/
+**/dist/
+**/.angular/

@@ -1,0 +1,160 @@
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">A</div>
+      <div>
+        <strong>Foundry Chat</strong>
+        <span>AI assistant</span>
+      </div>
+    </div>
+
+    <button class="new-chat" type="button" (click)="createSession()" [disabled]="sending()">
+      <span aria-hidden="true">+</span>
+      New conversation
+    </button>
+
+    <div class="history-heading">YOUR CHATS</div>
+    <nav class="sessions" aria-label="Chat sessions">
+      @if (loading() && sessions().length === 0) {
+        <p class="muted small">Loading conversations...</p>
+      } @else if (sessions().length === 0) {
+        <p class="muted small">Your conversations will appear here.</p>
+      } @else {
+        @for (session of sessions(); track session.id) {
+          <div
+            class="session-row"
+            [class.selected]="activeSession()?.id === session.id"
+          >
+            <button
+              class="session-select"
+              type="button"
+              (click)="openSession(session)"
+              [disabled]="sending()"
+              [attr.aria-current]="activeSession()?.id === session.id ? 'page' : null"
+              [title]="session.title"
+            >
+              <span class="session-icon" aria-hidden="true">◷</span>
+              <span class="session-title">{{ session.title }}</span>
+            </button>
+            <button
+              class="delete-session"
+              type="button"
+              (click)="deleteSession($event, session)"
+              [disabled]="sending()"
+              [attr.aria-label]="'Delete ' + session.title"
+              title="Delete conversation"
+            >
+              ×
+            </button>
+          </div>
+        }
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <span class="status-dot"></span>
+      <span>Connected to your API</span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-label">
+        <span class="eyebrow">CHAT</span>
+        <span class="separator">/</span>
+        <span class="current-title">{{ activeSession()?.title ?? 'New conversation' }}</span>
+      </div>
+      <div class="framework-badge">
+        <span class="badge-dot"></span>
+        Microsoft Agent Framework
+      </div>
+    </header>
+
+    @if (error()) {
+      <div class="error-banner" role="alert">
+        <span>{{ error() }}</span>
+        <button type="button" aria-label="Dismiss error" (click)="error.set('')">×</button>
+      </div>
+    }
+
+    <section class="conversation" aria-live="polite">
+      @if (!activeSession()) {
+        <div class="welcome">
+          <div class="welcome-mark" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <p class="eyebrow">YOUR AI WORKSPACE</p>
+          <h1>What can I help<br />you with today?</h1>
+          <p class="welcome-copy">
+            Start a conversation. Your chat history is saved privately in your local SQLite database.
+          </p>
+          <button class="welcome-button" type="button" (click)="createSession()">
+            Start a conversation <span aria-hidden="true">→</span>
+          </button>
+        </div>
+      } @else if (loading()) {
+        <div class="empty-state muted">Loading conversation...</div>
+      } @else if (messages().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon" aria-hidden="true">✦</div>
+          <h2>Start with a question</h2>
+          <p>Your messages and replies will appear here.</p>
+        </div>
+      } @else {
+        <div class="message-list">
+          @for (message of messages(); track message.id) {
+            <article class="message" [class.user-message]="message.role === 'user'">
+              <div class="avatar" [class.assistant-avatar]="message.role === 'assistant'">
+                {{ message.role === 'assistant' ? 'A' : 'Y' }}
+              </div>
+              <div class="message-body">
+                <div class="message-meta">
+                  <strong>{{ message.role === 'assistant' ? 'Assistant' : 'You' }}</strong>
+                  <time>{{ message.createdAtUtc | date: 'shortTime' }}</time>
+                </div>
+                @if (message.role === 'assistant' && !message.content && sending()) {
+                  <div class="typing" aria-label="Assistant is responding">
+                    <i></i><i></i><i></i>
+                  </div>
+                } @else {
+                  <div class="message-content">{{ message.content }}</div>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+
+    <div class="composer-wrap">
+      @if (activeSession()) {
+        <form class="composer" (submit)="sendMessage($event)">
+          <textarea
+            #messageInput
+            aria-label="Message"
+            placeholder="Ask anything..."
+            rows="1"
+            [value]="draft()"
+            (input)="draft.set(messageInput.value)"
+            [disabled]="sending()"
+          ></textarea>
+          <button
+            class="send-button"
+            type="submit"
+            [disabled]="sending() || !draft().trim()"
+            aria-label="Send message"
+          >
+            @if (sending()) {
+              <span class="send-spinner"></span>
+            } @else {
+              <span aria-hidden="true">↑</span>
+            }
+          </button>
+        </form>
+        <p class="composer-note">AI responses can be inaccurate. Verify important information.</p>
+      } @else {
+        <p class="composer-note">Create a conversation to get started.</p>
+      }
+    </div>
+  </main>
+</div>
